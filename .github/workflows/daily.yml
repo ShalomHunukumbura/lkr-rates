@@ -1,0 +1,52 @@
+name: daily
+
+on:
+  schedule:
+    # 13:30 UTC is 19:00 in Colombo, after the day's rates are out.
+    - cron: "30 13 * * *"
+  workflow_dispatch:
+
+# Never run two updates at once; they would both try to push.
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked --no-dev
+
+      # Fetch the last 10 days, merge, check. Exits non-zero if a check fails,
+      # which stops the job before anything is committed or published.
+      - run: uv run lkr-rates update
+
+      - name: Commit new data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet -- data/clean; then
+            echo "No new rates today."
+            git reset -q
+          else
+            git commit -q -m "data: rates up to $(date -u +%F)"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

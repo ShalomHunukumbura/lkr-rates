@@ -1,0 +1,27 @@
+rate_date,currency,rate_type,rate,fetched_at,reason
+2010-07-19,AUD,buy,99.172800,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,AUD,sell,96.553200,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,CAD,buy,108.319500,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,CAD,sell,105.593100,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,CHF,buy,108.947600,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,CHF,sell,106.334800,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,EUR,buy,147.304300,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,EUR,sell,143.903200,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,GBP,buy,174.470400,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,GBP,sell,170.930500,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,JPY,buy,1.318500,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,JPY,sell,1.286200,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,SGD,buy,82.613100,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,SGD,sell,80.846500,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,USD,buy,113.575500,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2010-07-19,USD,sell,111.965100,2026-10-13 04:38:51.529755,buy rate is not below sell rate
+2011-02-22,EUR,buy,148.984900,2026-10-13 04:39:01.790117,buy rate is not below sell rate
+2011-02-22,EUR,sell,144.850600,2026-10-13 04:39:01.790117,buy rate is not below sell rate
+2011-02-28,USD,buy,109.948000,2026-10-13 04:39:01.790117,buy rate is not below sell rate
+2011-02-28,USD,sell,91.672800,2026-10-13 04:39:01.790117,buy rate is not below sell rate
+2011-03-25,JPY,buy,1.343900,2026-10-13 04:39:01.790117,sell rate is more than 25% above buy rate
+2011-03-25,JPY,sell,2785.908400,2026-10-13 04:39:01.790117,sell rate is more than 25% above buy rate
+2018-10-31,CNY,buy,20.038900,2026-10-13 04:40:13.582666,sell rate is more than 25% above buy rate
+2018-10-31,CNY,sell,25.628000,2026-10-13 04:40:13.582666,sell rate is more than 25% above buy rate
+2021-01-08,EUR,buy,237.847000,2026-10-13 04:40:44.38939,buy rate is not below sell rate
+2021-01-08,EUR,sell,234.225800,2026-10-13 04:40:44.38939,buy rate is not below sell rate

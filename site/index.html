@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LKR exchange rates: daily history from the Central Bank of Sri Lanka</title>
+<meta name="description" content="Daily Sri Lankan rupee exchange rates since 2010, as a free dataset with a chart and a rate-on-this-date lookup.">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb;
+    --text: #0b0b0b; --text-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19;
+      --text: #f0efec; --text-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 20px 64px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--text-2); margin-bottom: 24px; }
+  a { color: inherit; }
+  .filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+  select, input[type=date], button {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--axis); border-radius: 6px; padding: 6px 10px; }
+  .ranges { display: flex; gap: 4px; }
+  .ranges button { cursor: pointer; }
+  .ranges button[aria-pressed=true] { background: var(--text); color: var(--surface); border-color: var(--text); }
+  :focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+          padding: 20px; margin-bottom: 20px; }
+  .hero-label { color: var(--text-2); }
+  .hero-value { font-size: 52px; font-weight: 600; line-height: 1.1; margin: 2px 0 6px; }
+  .hero-sub { color: var(--text-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; color: var(--text-2); font-size: 14px; margin-bottom: 8px; }
+  .key { display: inline-block; width: 16px; height: 2px; border-radius: 1px; vertical-align: middle; margin-right: 6px; }
+  .chart { position: relative; }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .tick { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tooltip { position: absolute; top: 0; pointer-events: none; background: var(--surface);
+             border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px;
+             box-shadow: 0 4px 16px rgba(0,0,0,0.12); white-space: nowrap; }
+  .tooltip .when { color: var(--text-2); margin-bottom: 4px; }
+  .tooltip .row { display: flex; align-items: center; gap: 6px; }
+  .tooltip .row strong { font-variant-numeric: tabular-nums; }
+  .tooltip .row span.name { color: var(--text-2); }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--text-2); font-size: 14px; }
+  .table-wrap { max-height: 320px; overflow: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 4px 10px; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child { text-align: left; }
+  th { position: sticky; top: 0; background: var(--surface); color: var(--text-2); font-weight: 600; }
+  .lookup { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  #lookup-result { margin: 12px 0 0; }
+  .small { color: var(--text-2); font-size: 14px; }
+  ul { margin: 0 0 12px; padding-left: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LKR exchange rates</h1>
+  <p class="lede">Daily Sri Lankan rupee rates from the Central Bank of Sri Lanka, from May 2010 to the latest working day, as one clean dataset.</p>
+
+  <div class="filters">
+    <label>Currency <select id="currency"></select></label>
+    <div class="ranges" role="group" aria-label="Date range">
+      <button data-range="30">1M</button>
+      <button data-range="182">6M</button>
+      <button data-range="365">1Y</button>
+      <button data-range="1826">5Y</button>
+      <button data-range="all">All</button>
+    </div>
+  </div>
+
+  <section class="card" aria-live="polite">
+    <div class="hero-label" id="hero-label"></div>
+    <div class="hero-value" id="hero-value">&nbsp;</div>
+    <div class="hero-sub" id="hero-sub"></div>
+  </section>
+
+  <section class="card">
+    <h2 id="chart-title">Rate over time</h2>
+    <div class="legend" id="legend"></div>
+    <div class="chart" id="chart">
+      <svg id="plot" viewBox="0 0 880 360" role="img" tabindex="0" aria-labelledby="chart-title"></svg>
+      <div class="tooltip" id="tooltip" hidden></div>
+    </div>
+    <details>
+      <summary>Show these numbers as a table</summary>
+      <div class="table-wrap"><table id="table"></table></div>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2>Rate on a date</h2>
+    <div class="lookup">
+      <label>Date <input type="date" id="lookup-date"></label>
+    </div>
+    <p id="lookup-result" aria-live="polite"></p>
+  </section>
+
+  <section class="card">
+    <h2>Download</h2>
+    <ul>
+      <li><a href="data/rates.csv">rates.csv</a>: every date and currency, with indicative, buy and sell columns</li>
+      <li><a href="data/rates.parquet">rates.parquet</a>: the same table, smaller and typed</li>
+      <li><a href="data/latest.json">latest.json</a>: the newest day only</li>
+      <li><a href="data/quarantine.csv">quarantine.csv</a>: the few published rates that are plainly wrong, left out of the files above, with the reason</li>
+    </ul>
+    <p class="small">Rates are rupees for one unit of the currency. "Indicative" is the Central Bank's middle rate. "Buy" and "sell" are telegraphic transfer rates, published for nine major currencies.</p>
+    <p class="small">Source: <a href="https://www.cbsl.gov.lk/en/rates-and-indicators/exchange-rates">Central Bank of Sri Lanka</a>, which describes these as indicative rates only. Coverage is patchy before 2014, where the Central Bank's own records have missing days. The Central Bank publishes rates to 4 decimal places, so very weak currencies have few significant digits. This is an unofficial archive. Check with your bank before using a rate for a transaction.</p>
+  </section>
+</main>
+
+<script>
+const SERIES = [
+  { key: "indicative", name: "Indicative", color: "var(--series-1)" },
+  { key: "buy", name: "Buy", color: "var(--series-2)" },
+  { key: "sell", name: "Sell", color: "var(--series-3)" },
+];
+let W = 880, H = 360;
+const M = { top: 12, right: 16, bottom: 28, left: 64 };
+const NS = "http://www.w3.org/2000/svg";
+const $ = (id) => document.getElementById(id);
+const state = { data: null, range: "365", view: null, index: null };
+const cache = new Map();
+
+const el = (tag, attrs = {}, text) => {
+  const node = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+const fmt = (v) => {
+  if (v == null) return "n/a";
+  const digits = v >= 1000 ? 0 : v >= 10 ? 2 : 4;
+  return v.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+};
+const longDate = (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB",
+  { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const dayNumber = (iso) => Date.parse(iso + "T00:00:00Z") / 86400000;
+
+// Index of the last date that is <= iso, or -1.
+function lastOnOrBefore(dates, iso) {
+  let lo = 0, hi = dates.length - 1, found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (dates[mid] <= iso) { found = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  return found;
+}
+
+function niceTicks(min, max, count = 5) {
+  const span = max - min || Math.abs(max) || 1;
+  const raw = span / count, power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map((m) => m * power).find((s) => s >= raw);
+  const ticks = [];
+  for (let t = Math.ceil(min / step) * step; t <= max + step * 1e-9; t += step) ticks.push(+t.toPrecision(12));
+  return { ticks, step };
+}
+
+function timeTicks(firstIso, lastIso) {
+  const first = new Date(firstIso + "T00:00:00Z"), last = new Date(lastIso + "T00:00:00Z");
+  const days = (last - first) / 86400000, ticks = [];
+  if (days > 730) {
+    const every = Math.ceil(days / 365 / 8);
+    for (let y = first.getUTCFullYear() + 1; y <= last.getUTCFullYear(); y++)
+      if (y % every === 0) ticks.push({ at: Date.UTC(y, 0, 1) / 86400000, label: String(y) });
+  } else if (days > 70) {
+    const every = Math.ceil(days / 30 / 7);
+    const d = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 1));
+    for (; d <= last; d.setUTCMonth(d.getUTCMonth() + 1))
+      if (d.getUTCMonth() % every === 0)
+        ticks.push({ at: d / 86400000, label: d.toLocaleDateString("en-GB",
+          { month: "short", year: d.getUTCMonth() === 0 ? "numeric" : undefined, timeZone: "UTC" }) });
+  } else {
+    const every = Math.max(1, Math.ceil(days / 6));
+    for (let d = new Date(first); d <= last; d.setUTCDate(d.getUTCDate() + every))
+      ticks.push({ at: d / 86400000, label: d.toLocaleDateString("en-GB",
+        { day: "numeric", month: "short", timeZone: "UTC" }) });
+  }
+  return ticks;
+}
+
+function activeSeries() {
+  return SERIES.filter((s) => state.data[s.key].some((v) => v != null));
+}
+
+function computeView() {
+  const { dates } = state.data;
+  let from = 0;
+  if (state.range !== "all") {
+    const cutoff = new Date(dates.at(-1) + "T00:00:00Z");
+    cutoff.setUTCDate(cutoff.getUTCDate() - Number(state.range));
+    from = Math.max(0, lastOnOrBefore(dates, cutoff.toISOString().slice(0, 10)) + 1);
+  }
+  const series = activeSeries();
+  let min = Infinity, max = -Infinity;
+  for (const s of series) for (let i = from; i < dates.length; i++) {
+    const v = state.data[s.key][i];
+    if (v != null) { if (v < min) min = v; if (v > max) max = v; }
+  }
+  const pad = (max - min) * 0.08 || max * 0.01;
+  const y = niceTicks(min - pad, max + pad);
+  const y0 = Math.min(y.ticks[0], min - pad), y1 = Math.max(y.ticks.at(-1), max + pad);
+  const x0 = dayNumber(dates[from]), x1 = dayNumber(dates.at(-1));
+  state.view = {
+    from, series, yTicks: y.ticks,
+    x: (iso) => M.left + (x1 === x0 ? 0.5 : (dayNumber(iso) - x0) / (x1 - x0)) * (W - M.left - M.right),
+    xAt: (day) => M.left + (x1 === x0 ? 0.5 : (day - x0) / (x1 - x0)) * (W - M.left - M.right),
+    y: (v) => H - M.bottom - ((v - y0) / (y1 - y0)) * (H - M.top - M.bottom),
+  };
+}
+
+function drawChart() {
+  const svg = $("plot"), { dates } = state.data, v = state.view;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.replaceChildren();
+  for (const t of v.yTicks) {
+    svg.append(el("line", { x1: M.left, x2: W - M.right, y1: v.y(t), y2: v.y(t), stroke: "var(--grid)", "stroke-width": 1 }));
+    svg.append(el("text", { x: M.left - 8, y: v.y(t) + 4, "text-anchor": "end", class: "tick" }, fmt(t)));
+  }
+  svg.append(el("line", { x1: M.left, x2: W - M.right, y1: H - M.bottom, y2: H - M.bottom, stroke: "var(--axis)", "stroke-width": 1 }));
+  const xTicks = timeTicks(dates[v.from], dates.at(-1)), skip = Math.ceil(xTicks.length / (W < 560 ? 4 : 9));
+  for (const t of xTicks.filter((_, i) => i % skip === 0))
+    svg.append(el("text", { x: v.xAt(t.at), y: H - 8, "text-anchor": "middle", class: "tick" }, t.label));
+  for (const s of v.series) {
+    let d = "", pen = false;
+    for (let i = v.from; i < dates.length; i++) {
+      const value = state.data[s.key][i];
+      if (value == null) { pen = false; continue; }
+      d += `${pen ? "L" : "M"}${v.x(dates[i]).toFixed(1)},${v.y(value).toFixed(1)}`;
+      pen = true;
+    }
+    svg.append(el("path", { d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  }
+  svg.append(el("g", { id: "hover" }));
+}
+
+function showHover(i) {
+  const { dates } = state.data, v = state.view, tip = $("tooltip"), layer = $("hover");
+  state.index = i;
+  layer.replaceChildren();
+  if (i == null) { tip.hidden = true; return; }
+  const x = v.x(dates[i]);
+  layer.append(el("line", { x1: x, x2: x, y1: M.top, y2: H - M.bottom, stroke: "var(--axis)", "stroke-width": 1 }));
+  tip.replaceChildren();
+  const when = document.createElement("div");
+  when.className = "when"; when.textContent = longDate(dates[i]);
+  tip.append(when);
+  for (const s of v.series) {
+    const value = state.data[s.key][i];
+    if (value == null) continue;
+    layer.append(el("circle", { cx: x, cy: v.y(value), r: 4, fill: s.color, stroke: "var(--surface)", "stroke-width": 2 }));
+    const row = document.createElement("div"), key = document.createElement("span");
+    const strong = document.createElement("strong"), name = document.createElement("span");
+    row.className = "row"; key.className = "key"; key.style.background = s.color; key.style.marginRight = "0";
+    strong.textContent = fmt(value); name.className = "name"; name.textContent = s.name;
+    row.append(key, strong, name); tip.append(row);
+  }
+  tip.hidden = false;
+  const box = $("chart").getBoundingClientRect(), px = (x / W) * box.width;
+  const left = px + 14 + tip.offsetWidth > box.width ? px - 14 - tip.offsetWidth : px + 14;
+  tip.style.left = `${Math.max(0, left)}px`;
+  tip.style.top = `${(M.top / H) * box.height}px`;
+}
+
+function nearestIndex(clientX) {
+  const { dates } = state.data, v = state.view, box = $("plot").getBoundingClientRect();
+  const x = ((clientX - box.left) / box.width) * W;
+  let best = v.from, distance = Infinity;
+  let lo = v.from, hi = dates.length - 1;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (v.x(dates[mid]) < x) lo = mid; else hi = mid; }
+  for (const i of [lo, hi]) { const d = Math.abs(v.x(dates[i]) - x); if (d < distance) { distance = d; best = i; } }
+  return best;
+}
+
+function drawLegend() {
+  const legend = $("legend");
+  legend.replaceChildren();
+  if (state.view.series.length < 2) return;
+  for (const s of state.view.series) {
+    const item = document.createElement("span"), key = document.createElement("span");
+    key.className = "key"; key.style.background = s.color;
+    item.append(key, document.createTextNode(s.name));
+    legend.append(item);
+  }
+}
+
+function drawTable() {
+  const { dates } = state.data, v = state.view, table = $("table");
+  const head = document.createElement("tr");
+  for (const label of ["Date", ...v.series.map((s) => s.name)]) {
+    const th = document.createElement("th"); th.textContent = label; head.append(th);
+  }
+  const rows = [head];
+  for (let i = dates.length - 1; i >= v.from; i--) {
+    const tr = document.createElement("tr");
+    for (const text of [dates[i], ...v.series.map((s) => fmt(state.data[s.key][i]))]) {
+      const td = document.createElement("td"); td.textContent = text; tr.append(td);
+    }
+    rows.push(tr);
+  }
+  table.replaceChildren(...rows);
+}
+
+function drawHero() {
+  const d = state.data, last = d.dates.length - 1, code = d.currency;
+  const headline = d.indicative[last] ?? d.sell[last] ?? d.buy[last];
+  $("hero-label").textContent = `1 ${code} on ${longDate(d.dates[last])}`;
+  $("hero-value").textContent = `${fmt(headline)} LKR`;
+  // Buy and sell rates often come out a day after the indicative rate.
+  let pair = last;
+  while (pair >= 0 && (d.buy[pair] == null || d.sell[pair] == null)) pair--;
+  $("hero-sub").textContent = pair < 0 ? "Indicative middle rate"
+    : `Indicative middle rate. Banks bought at ${fmt(d.buy[pair])} and sold at ${fmt(d.sell[pair])}`
+      + (pair === last ? "." : ` on ${longDate(d.dates[pair])}.`);
+  $("chart-title").textContent = `${code} to LKR`;
+}
+
+function drawLookup() {
+  const d = state.data, asked = $("lookup-date").value, out = $("lookup-result");
+  if (!asked) { out.textContent = ""; return; }
+  const i = lastOnOrBefore(d.dates, asked);
+  if (i < 0) { out.textContent = `No ${d.currency} rate on or before ${longDate(asked)}. The data starts on ${longDate(d.dates[0])}.`; return; }
+  const parts = SERIES.filter((s) => d[s.key][i] != null).map((s) => `${s.name.toLowerCase()} ${fmt(d[s.key][i])}`);
+  const note = d.dates[i] === asked ? "" : ` No rate was published on ${longDate(asked)}, so this is the last working day before it.`;
+  out.textContent = `1 ${d.currency} on ${longDate(d.dates[i])}: ${parts.join(", ")} LKR.${note}`;
+}
+
+function render() {
+  // Draw at the real pixel width, so text stays readable on a phone.
+  W = Math.max(300, Math.round($("chart").clientWidth));
+  H = W < 560 ? 260 : 360;
+  computeView(); drawHero(); drawLegend(); drawChart(); drawTable(); drawLookup(); showHover(null);
+  for (const b of document.querySelectorAll(".ranges button"))
+    b.setAttribute("aria-pressed", String(b.dataset.range === state.range));
+}
+
+async function loadCurrency(code) {
+  if (!cache.has(code)) cache.set(code, fetch(`data/by-currency/${code}.json`).then((r) => r.json()));
+  state.data = await cache.get(code);
+  $("lookup-date").max = state.data.dates.at(-1);
+  render();
+}
+
+async function start() {
+  const currencies = await fetch("data/currencies.json").then((r) => r.json());
+  const select = $("currency");
+  for (const c of currencies) {
+    const option = document.createElement("option");
+    option.value = c.code; option.textContent = `${c.code}: ${c.name}`;
+    select.append(option);
+  }
+  select.value = "USD";
+  select.addEventListener("change", () => loadCurrency(select.value));
+  for (const b of document.querySelectorAll(".ranges button"))
+    b.addEventListener("click", () => { state.range = b.dataset.range; render(); });
+  $("lookup-date").addEventListener("input", drawLookup);
+  const plot = $("plot");
+  plot.addEventListener("pointermove", (e) => showHover(nearestIndex(e.clientX)));
+  plot.addEventListener("pointerleave", () => showHover(null));
+  plot.addEventListener("focus", () => showHover(state.data.dates.length - 1));
+  plot.addEventListener("blur", () => showHover(null));
+  plot.addEventListener("keydown", (e) => {
+    const step = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const i = (state.index ?? state.data.dates.length - 1) + step;
+    showHover(Math.min(state.data.dates.length - 1, Math.max(state.view.from, i)));
+  });
+  await loadCurrency("USD");
+  let resizing;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizing);
+    resizing = setTimeout(() => { if ($("chart").clientWidth !== W) render(); }, 150);
+  });
+}
+start();
+</script>
+</body>
+</html>
