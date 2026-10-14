@@ -1,0 +1,41 @@
+name: pages
+
+# Publishes the page from the data already in the repository. It does not download
+# anything: the Central Bank's site refuses requests from GitHub's servers, so the daily
+# update runs elsewhere (see scripts/daily.sh) and pushes the new data here.
+on:
+  push:
+    branches: [main]
+    paths: ["data/clean/**", "site/**", "src/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked --no-dev
+
+      # Rebuild site/data from data/clean. The checks already ran before that data
+      # was committed.
+      - run: uv run lkr-rates export
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

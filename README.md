@@ -71,8 +71,10 @@ CBSL web forms -> data/raw/ (pages, untouched) -> data/clean/rates.parquet -> si
    nothing is written.
 5. **Publish.** Write the CSV, Parquet and JSON files the page uses.
 
-A GitHub Actions workflow runs `update` every day at 19:00 Colombo time, commits any new
-rates, and publishes the page.
+`scripts/daily.sh` runs `update` and pushes any new rates. The push triggers a GitHub
+Actions workflow that publishes the page. The update itself cannot run on GitHub Actions:
+the Central Bank's site answers GitHub's servers with `403 Forbidden`. So the script runs
+on a schedule from an ordinary machine instead.
 
 [`explain.md`](explain.md) walks through all of this step by step, with the ideas behind it.
 
