@@ -76,8 +76,6 @@ Actions workflow that publishes the page. The update itself cannot run on GitHub
 the Central Bank's site answers GitHub's servers with `403 Forbidden`. So the script runs
 on a schedule from an ordinary machine instead.
 
-[`explain.md`](explain.md) walks through all of this step by step, with the ideas behind it.
-
 ## Things to know about the data
 
 - The Central Bank's form says its data starts in November 2006. It returns nothing before
