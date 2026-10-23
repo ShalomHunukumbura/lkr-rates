@@ -1,0 +1,17 @@
+{
+  "currencies": {
+    "Australian Dollar": "AUD",
+    "British Pound": "GBP",
+    "Canadian Dollar": "CAD",
+    "Euro": "EUR",
+    "Renminbi": "CNY",
+    "Singapore Dollar": "SGD",
+    "Swiss Franc": "CHF",
+    "United States Dollar": "USD",
+    "Yen": "JPY"
+  },
+  "end": "2026-10-23",
+  "fetched_at": "2026-10-23T03:39:58.955703+00:00",
+  "series": "tt",
+  "start": "2026-10-14"
+}
